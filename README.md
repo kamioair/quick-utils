@@ -1,2 +1,10 @@
-# quick-utils
-quick-utils golang
+# Quick Utils
+
+## Installation
+
+### get it
+
+```go
+go get github.com/liaozhibinair/quick-utils
+```
+
