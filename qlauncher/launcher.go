@@ -3,7 +3,7 @@ package qlauncher
 import (
 	"fmt"
 	"github.com/kardianos/service"
-	"github.com/liaozhibinair/quick-utils.golang/qio"
+	"github.com/liaozhibinair/quick-utils/qio"
 	"log"
 	"os"
 	"path"

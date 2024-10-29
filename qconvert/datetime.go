@@ -1,19 +1,32 @@
-package qdate
+package qconvert
 
 import (
+	"github.com/araddon/dateparse"
 	"strings"
 	"time"
 )
 
-// ToString
+// TimeToString
 //
-//	@Description: 转化为字符串
+//	@Description: 时间转化为字符串
 //	@param value 时间
-//	@param formatStr 格式化串 可以是yyyy/MM/dd HH:mm:ss 或者 yyyy-MM-dd HH:mm:ss:fff等
+//	@param formatStr 格式化串 可以是yyyy/MM/dd HH:mm:ss 或者 yyyy-MM-dd HH:mm:ss.fff等
 //	@return string
-func ToString(value time.Time, formatStr string) string {
+func TimeToString(value time.Time, formatStr string) string {
+	if formatStr == "" {
+		formatStr = "yyyy-MM-dd HH:mm:ss"
+	}
 	layout := getLayout(formatStr)
 	return value.Format(layout)
+}
+
+// StringToTime
+//
+//	@Description: 字符串转化为时间
+//	@param valueStr 时间字符串
+func StringToTime(timeStr string) (time.Time, error) {
+	timeStr = strings.Trim(timeStr, "\"")
+	return dateparse.ParseLocal(timeStr)
 }
 
 func getLayout(formatStr string) string {
