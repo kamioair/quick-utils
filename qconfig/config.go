@@ -10,9 +10,14 @@ import (
 )
 
 var (
-	_filePath string
+	_filePath = "./config/config.yaml"
 )
 
+// Init
+//
+//	@Description: 环境初始化
+//	@param filePath 配置文件路径
+//	@param configContent 配置文件默认内容
 func Init(filePath string, configContent []byte) {
 	_filePath = filePath
 	if qio.PathExists(filePath) == false {
@@ -29,10 +34,14 @@ func Init(filePath string, configContent []byte) {
 	}
 }
 
+// Load
+//
+//	@Description: 加载内容到结构体
+//	@param module 模块名称
+//	@param configStruct 结构体指针
 func Load(module string, configStruct any) {
 	value := viper.Get(module)
 	if value == nil {
-		save(_filePath, map[string]any{module: configStruct})
 		return
 	}
 	js, err := json.Marshal(value)
@@ -42,14 +51,15 @@ func Load(module string, configStruct any) {
 			return
 		}
 	}
-	currJs, err := json.Marshal(configStruct)
-	str1 := strings.ToLower(string(js))
-	str2 := strings.ToLower(string(currJs))
-	if str1 != str2 {
-		save(_filePath, map[string]any{module: configStruct})
-	}
 }
 
+// Get
+//
+//	@Description: 获取内容
+//	@param module 模块名称
+//	@param key 节点路径，例如 xx.xx.xx
+//	@param defValue 默认值
+//	@return T
 func Get[T any](module, key string, defValue T) T {
 	// 从缓存中获取
 	tKey := fmt.Sprintf("%s.%s", module, key)
@@ -82,13 +92,26 @@ func Get[T any](module, key string, defValue T) T {
 	return *new(T)
 }
 
-func save(filePath string, configStruct any) error {
-	yamlData, err := qio.ReadAllBytes(filePath)
+// Save
+//
+//	@Description: 保持结构体的值
+//	              注意，当前版本该方法只会替换配置文件中已经存在的节点的值，
+//				  新增的属性不会自动创建
+//	@param module 模块名称
+//	@param configStruct 结构体指针
+func Save(module string, configStruct any) error {
+	yamlData, err := qio.ReadAllBytes(_filePath)
 	if err != nil {
 		return err
 	}
 	// 更新YAML数据
-	jsonStr, err := json.Marshal(configStruct)
+	var model any
+	if module == "" {
+		model = configStruct
+	} else {
+		model = map[string]interface{}{module: configStruct}
+	}
+	jsonStr, err := json.Marshal(model)
 	if err != nil {
 		return err
 	}
@@ -99,8 +122,19 @@ func save(filePath string, configStruct any) error {
 	// 过滤多余空格
 	str := string(updatedYAML)
 	str = strings.Replace(str, "\n\n", "\n", -1)
+	sp := strings.Split(str, "\n")
+	final := ""
+	for i, line := range sp {
+		if i > 0 && strings.HasPrefix(line, "#") && !strings.HasPrefix(sp[i-1], "#") {
+			final += "\n"
+		}
+		if !strings.HasPrefix(line, "#") {
+			line = strings.Replace(line, "    ", "  ", -1)
+		}
+		final += fmt.Sprintf("%s\n", line)
+	}
 	// 写回文件
-	err = qio.WriteAllBytes(filePath, []byte(str), false)
+	err = qio.WriteAllBytes(_filePath, []byte(final), false)
 	if err != nil {
 		return err
 	}
@@ -119,29 +153,6 @@ func updateNodeValue(node *yaml.Node, key string, value interface{}) {
 			return
 		}
 	}
-}
-
-// findValueInData 在data中查找指定键的值
-func findValueInData(data interface{}, keys []string) interface{} {
-	if len(keys) == 0 {
-		return nil
-	}
-	switch v := data.(type) {
-	case map[string]interface{}:
-		if value, ok := v[keys[0]]; ok {
-			if len(keys) == 1 {
-				return value
-			}
-			return findValueInData(value, keys[1:])
-		}
-	case []interface{}:
-		for _, item := range v {
-			if value := findValueInData(item, keys); value != nil {
-				return value
-			}
-		}
-	}
-	return nil
 }
 
 // updateYAMLWithJSON 将JSON字符串转换为interface{}，并更新YAML节点
@@ -192,7 +203,32 @@ func updateYAMLNode(node *yaml.Node, data interface{}, keys []string) {
 		for i, n := range node.Content {
 			updateYAMLNode(n, data, append(keys, fmt.Sprintf("%d", i)))
 		}
-	default:
-		fmt.Println("config.go updateYAMLNode unhandled default case")
 	}
+}
+
+// findValueInData 在data中查找指定键的值
+func findValueInData(data interface{}, keys []string) interface{} {
+	if len(keys) == 0 {
+		return nil
+	}
+	switch tp := data.(type) {
+	case map[string]interface{}:
+		nv := map[string]interface{}{}
+		for k, v := range tp {
+			nv[strings.ToLower(k)] = v
+		}
+		if value, ok := nv[strings.ToLower(keys[0])]; ok {
+			if len(keys) == 1 {
+				return value
+			}
+			return findValueInData(value, keys[1:])
+		}
+	case []interface{}:
+		for _, item := range tp {
+			if value := findValueInData(item, keys); value != nil {
+				return value
+			}
+		}
+	}
+	return nil
 }
