@@ -20,25 +20,27 @@ var dbCaches = make(map[string]*gorm.DB)
 //	@Description: 创建数据库
 //	@param cfgSection 配置节点，用于启动多个数据库不用配置
 //	@return *gorm.DB
-func NewDb(cfgSection string) *gorm.DB {
-	// 如果缓存已经存在，则之间返回
-	if cdb, ok := dbCaches[cfgSection]; ok {
+func NewDb(module string) *gorm.DB {
+	// 如果缓存已经存在，则直接返回
+	if cdb, ok := dbCaches[module]; ok {
 		return cdb
 	}
 
-	setting := loadSetting(cfgSection)
+	// 加载配置
+	setting := loadSetting(module)
 	gc := gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
 			NoLowerCase:   true,
 		},
-		SkipDefaultTransaction: setting.SkipDefTransaction == 1,
+		SkipDefaultTransaction: setting.Config.SkipDefaultTransaction,
 	}
-	if setting.OpenLog == 1 {
+	if setting.Config.OpenLog {
 		gc.Logger = logger.Default.LogMode(logger.Info)
 	}
-	sp := strings.Split(setting.DBConfig, "|")
+	sp := strings.Split(setting.Connect, "|")
 
+	// 创建数据库连接
 	var db *gorm.DB
 	var err error
 	switch sp[0] {
@@ -77,6 +79,6 @@ func NewDb(cfgSection string) *gorm.DB {
 	if db == nil {
 		panic(errors.New("unknown db type"))
 	}
-	dbCaches[cfgSection] = db
+	dbCaches[module] = db
 	return db
 }

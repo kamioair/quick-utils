@@ -1,20 +1,48 @@
 package qservice
 
 import (
+	"github.com/liaozhibinair/quick-utils/qconfig"
 	"github.com/liaozhibinair/quick-utils/qdefine"
+	"github.com/liaozhibinair/quick-utils/qio"
 	"github.com/liaozhibinair/quick-utils/qlauncher"
 	easyCon "github.com/qiu-tec/easy-con.golang"
+	"os"
 	"strings"
 	"time"
 )
 
 type MicroService struct {
+	Module  string
 	adapter easyCon.IAdapter
 	setting Setting
 }
 
-func New(setting Setting) *MicroService {
+func New(module string, version string, onReqHandler ReqHandler, configContent []byte) *MicroService {
+	// 修改系统路径为当前目录
+	cd, err := qio.GetCurrentDirectory()
+	if err != nil {
+		panic(err)
+	}
+	err = os.Chdir(qio.GetDirectory(cd))
+	if err != nil {
+		panic(err)
+	}
+
+	// 初始化配置
+	qconfig.Init("./config/config.yaml", configContent)
+
+	setting := Setting{
+		Module: module,
+		Host: Host{
+			Addr: qconfig.Get(module, "mqtt.addr", "ws://127.0.0.1:5002/ws"),
+			UId:  qconfig.Get(module, "mqtt.username", ""),
+			Pwd:  qconfig.Get(module, "mqtt.password", ""),
+		},
+		Version:      version,
+		OnReqHandler: onReqHandler,
+	}
 	serv := &MicroService{
+		Module:  module,
 		setting: setting,
 	}
 
@@ -67,9 +95,18 @@ func (serv *MicroService) onReq(pack easyCon.PackReq) (easyCon.EResp, any) {
 		serv.adapter.Reset()
 		return easyCon.ERespSuccess, nil
 	}
-	//if serv.setting.OnReqHandler != nil {
-	//	return serv.setting.OnReqHandler(pack)
-	//}
+	if serv.setting.OnReqHandler != nil {
+		ctx, err1 := newControl(pack)
+		if err1 != nil {
+			return easyCon.ERespError, err1
+		}
+		rs, err2 := serv.setting.OnReqHandler(pack.Route, ctx)
+		if err2 != nil {
+			return easyCon.ERespError, err2
+		}
+		// 执行成功，返回结果
+		return easyCon.ERespSuccess, rs
+	}
 	return easyCon.ERespRouteNotFind, "Route Not Matched"
 }
 

@@ -6,30 +6,36 @@ import (
 	"time"
 )
 
-// TimeToString
+var DateTime convertDateTime
+
+type convertDateTime struct {
+}
+
+// ToString
 //
 //	@Description: 时间转化为字符串
 //	@param value 时间
 //	@param formatStr 格式化串 可以是yyyy/MM/dd HH:mm:ss 或者 yyyy-MM-dd HH:mm:ss.fff等
 //	@return string
-func TimeToString(value time.Time, formatStr string) string {
+func (c convertDateTime) ToString(value time.Time, formatStr string) string {
 	if formatStr == "" {
 		formatStr = "yyyy-MM-dd HH:mm:ss"
 	}
-	layout := getLayout(formatStr)
+	layout := c.getLayout(formatStr)
 	return value.Format(layout)
 }
 
-// StringToTime
+// ToTime
 //
-//	@Description: 字符串转化为时间
+//	@Description: 字符串转化为内置时间
 //	@param valueStr 时间字符串
-func StringToTime(timeStr string) (time.Time, error) {
+//	@return time.Time
+func (c convertDateTime) ToTime(timeStr string) (time.Time, error) {
 	timeStr = strings.Trim(timeStr, "\"")
 	return dateparse.ParseLocal(timeStr)
 }
 
-func getLayout(formatStr string) string {
+func (c convertDateTime) getLayout(formatStr string) string {
 	//"2006-01-02 15:04:05"
 	if strings.Contains(formatStr, "yyyy") {
 		formatStr = strings.Replace(formatStr, "yyyy", "2006", 1)

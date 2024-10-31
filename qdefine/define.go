@@ -1,7 +1,5 @@
 package qdefine
 
-import "reflect"
-
 // File 文件
 type File struct {
 	Name string // 文件名
@@ -17,10 +15,14 @@ type Context interface {
 	GetByte(key string) byte
 	GetBool(key string) bool
 	GetDate(key string) Date
-	GetTime(key string) DateTime
-	GetStruct(key string, objType reflect.Type) any
-	GetList(listType reflect.Type) any
+	GetDateTime(key string) DateTime
 	GetFiles(key string) []File
-	GetReturnValue() interface{}
-	SetNewReturnValue(newValue interface{})
+	GetStruct(refStruct any)
+	Raw() any
 }
+
+// Date 日期
+type Date uint32
+
+// DateTime 日期+时间
+type DateTime uint64

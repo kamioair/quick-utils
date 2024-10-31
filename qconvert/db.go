@@ -7,36 +7,37 @@ import (
 	"strings"
 )
 
-// ApiModelToDbModel
+var DB convertDatabase
+
+type convertDatabase struct {
+}
+
+// ToDbModel
 //
 //	@Description: 将Api的Model序列化为数据库的Model
-//	@param apiTypesStruct ApiModel
-//	@return T DbModel
-func ApiModelToDbModel[T any](apiTypesStruct any) T {
+//	@param apiModel ApiModel
+//	@param refDbModel 待转换的DbModel
+func (c convertDatabase) ToDbModel(apiModel any, refDbModel any) {
 	// 先将apiModel转为字典
-	js, _ := json.Marshal(apiTypesStruct)
+	js, _ := json.Marshal(apiModel)
 	values := map[string]interface{}{}
 	_ = json.Unmarshal(js, &values)
 	// 在写入到数据库Model
-	dbModel := new(T)
-	_ = setModel(dbModel, values)
-	return *dbModel
+	_ = c.setModel(refDbModel, values)
 }
 
-// DbModelToApiModel
+// ToApiModel
 //
 //	@Description: 将数据库的Model反序列化到Api的Model
 //	@param dbModel DbModel
-//	@return T ApiModel
-func DbModelToApiModel[T any](dbModel any) T {
-	apiModel := new(T)
-	api := qreflect.New(apiModel)
+//	@param refApiModel 待转换的ApiModel
+func (c convertDatabase) ToApiModel(dbModel any, refApiModel any) {
+	api := qreflect.New(refApiModel)
 	// 将数据库Model中的内容写入到apiModel中
 	_ = api.SetAny(qreflect.New(dbModel).ToMapExpandAll())
-	return *apiModel
 }
 
-func setModel(objectPtr interface{}, value map[string]interface{}) error {
+func (c convertDatabase) setModel(objectPtr interface{}, value map[string]interface{}) error {
 	if objectPtr == nil {
 		return errors.New("the object cannot be empty")
 	}
@@ -54,10 +55,10 @@ func setModel(objectPtr interface{}, value map[string]interface{}) error {
 		}
 	}
 	// 修改Info
-	return setInfo(ref, value)
+	return c.setInfo(ref, value)
 }
 
-func setInfo(ref *qreflect.Reflect, value map[string]interface{}) error {
+func (c convertDatabase) setInfo(ref *qreflect.Reflect, value map[string]interface{}) error {
 	all := ref.ToMap()
 
 	// 复制一份
@@ -68,14 +69,14 @@ func setInfo(ref *qreflect.Reflect, value map[string]interface{}) error {
 
 	// 转摘要
 	if field, ok := temp["SummaryFields"]; ok && field != "" {
-		e := ref.Set("Summary", fields(field, all["Summary"], all, &temp))
+		e := ref.Set("Summary", c.fields(field, all["Summary"], all, &temp))
 		if e != nil {
 			return e
 		}
 	}
 	// 转信息
 	if field, ok := temp["InfoFields"]; ok && field != "" {
-		e := ref.Set("FullInfo", fields(field, all["FullInfo"], all, &temp))
+		e := ref.Set("FullInfo", c.fields(field, all["FullInfo"], all, &temp))
 		if e != nil {
 			return e
 		}
@@ -103,7 +104,7 @@ func setInfo(ref *qreflect.Reflect, value map[string]interface{}) error {
 	return nil
 }
 
-func fields(field interface{}, source interface{}, all map[string]interface{}, values *map[string]interface{}) string {
+func (c convertDatabase) fields(field interface{}, source interface{}, all map[string]interface{}, values *map[string]interface{}) string {
 	if field == nil || field.(string) == "" {
 		return ""
 	}
