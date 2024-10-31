@@ -1,7 +1,6 @@
 package qservice
 
 import (
-	"github.com/liaozhibinair/quick-utils/qconfig"
 	"github.com/liaozhibinair/quick-utils/qdefine"
 	"os"
 )
@@ -15,22 +14,10 @@ type Setting struct {
 }
 
 type Host struct {
-	Addr string
-	UId  string
-	Pwd  string
-}
-
-func NewSetting(module string, version string, onReqHandler ReqHandler) Setting {
-	return Setting{
-		Module: module,
-		Host: Host{
-			Addr: qconfig.Get(module, "mqtt.addr", "ws://127.0.0.1:5002/ws"),
-			UId:  qconfig.Get(module, "mqtt.username", ""),
-			Pwd:  qconfig.Get(module, "mqtt.password", ""),
-		},
-		Version:      version,
-		OnReqHandler: onReqHandler,
-	}
+	Addr    string
+	UId     string
+	Pwd     string
+	LogMode string
 }
 
 type ReqHandler func(route string, ctx qdefine.Context) (any, error)

@@ -34,9 +34,10 @@ func New(module string, version string, onReqHandler ReqHandler, configContent [
 	setting := Setting{
 		Module: module,
 		Host: Host{
-			Addr: qconfig.Get(module, "mqtt.addr", "ws://127.0.0.1:5002/ws"),
-			UId:  qconfig.Get(module, "mqtt.username", ""),
-			Pwd:  qconfig.Get(module, "mqtt.password", ""),
+			Addr:    qconfig.Get(module, "mqtt.addr", "ws://127.0.0.1:5002/ws"),
+			UId:     qconfig.Get(module, "mqtt.username", ""),
+			Pwd:     qconfig.Get(module, "mqtt.password", ""),
+			LogMode: qconfig.Get(module, "mqtt.logMode", "NONE"),
 		},
 		Version:      version,
 		OnReqHandler: onReqHandler,
@@ -50,6 +51,7 @@ func New(module string, version string, onReqHandler ReqHandler, configContent [
 	apiSetting := easyCon.NewSetting(setting.Module, setting.Host.Addr, serv.onReq, serv.onStatusChanged)
 	apiSetting.UID = setting.Host.UId
 	apiSetting.PWD = setting.Host.Pwd
+	apiSetting.LogMode = easyCon.ELogMode(setting.Host.LogMode)
 	serv.adapter = easyCon.NewMqttAdapter(apiSetting)
 
 	return serv
