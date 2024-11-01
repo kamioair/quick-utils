@@ -84,7 +84,12 @@ func (serv *MicroService) SendLog(logType string, content string, err error) {
 	}
 }
 
-func (serv *MicroService) onReq(pack easyCon.PackReq) (easyCon.EResp, any) {
+func (serv *MicroService) onReq(pack easyCon.PackReq) (code easyCon.EResp, resp any) {
+	defer errRecover(func(err string) {
+		code = easyCon.ERespError
+		resp = err
+	})
+
 	switch pack.Route {
 	case "Exit":
 		serv.onStop()
@@ -100,11 +105,11 @@ func (serv *MicroService) onReq(pack easyCon.PackReq) (easyCon.EResp, any) {
 	if serv.setting.OnReqHandler != nil {
 		ctx, err1 := newControl(pack)
 		if err1 != nil {
-			return easyCon.ERespError, err1
+			return easyCon.ERespError, err1.Error()
 		}
 		rs, err2 := serv.setting.OnReqHandler(pack.Route, ctx)
 		if err2 != nil {
-			return easyCon.ERespError, err2
+			return easyCon.ERespError, err2.Error()
 		}
 		// 执行成功，返回结果
 		return easyCon.ERespSuccess, rs

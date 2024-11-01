@@ -13,12 +13,12 @@ var (
 	dateTimeFormat = "" // 日期时间掩码
 )
 
-// NewTime
+// NewDateTime
 //
 //	@Description: 创建日期+时间
 //	@param t 时间
 //	@return Date
-func NewTime(t time.Time) DateTime {
+func NewDateTime(t time.Time) DateTime {
 	t = t.Local()
 	s := fmt.Sprintf("%04d%02d%02d%02d%02d%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 	v, _ := strconv.ParseUint(s, 10, 64)

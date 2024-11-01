@@ -17,7 +17,8 @@ type context struct {
 }
 
 type values struct {
-	Inputs      []map[string]interface{}
+	InputMaps   []map[string]interface{}
+	InputRaw    interface{}
 	OutputValue interface{}
 }
 
@@ -25,15 +26,23 @@ func newControl(pack easyCon.PackReq) (*context, error) {
 	ctx := &context{
 		pack: pack,
 		values: &values{
-			Inputs: make([]map[string]interface{}, 0),
+			InputMaps: make([]map[string]interface{}, 0),
 		},
 	}
 	if pack.Content != nil {
-		content, err := json.Marshal(pack.Content)
-		if err != nil {
-			return nil, err
+		var content []byte
+		switch pack.Content.(type) {
+		case string:
+			str := pack.Content.(string)
+			content = []byte(str)
+		default:
+			js, err := json.Marshal(pack.Content)
+			if err != nil {
+				return nil, err
+			}
+			content = js
 		}
-		err = ctx.values.load(content)
+		err := ctx.values.load(content)
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +151,7 @@ func (c *context) GetStruct(refStruct any) {
 }
 
 func (c *context) Raw() any {
-	return c.values.getValue("")
+	return c.values.InputRaw
 }
 
 func (d *values) load(content []byte) error {
@@ -162,26 +171,23 @@ func (d *values) load(content []byte) error {
 	} else {
 		maps = append(maps, map[string]interface{}{"": obj})
 	}
-	d.Inputs = maps
+	d.InputRaw = obj
+	d.InputMaps = maps
 	return nil
 }
 
 func (d *values) getValue(key string) interface{} {
-	if len(d.Inputs) == 0 {
+	if len(d.InputMaps) == 0 {
 		return nil
 	}
-	if key == "" {
-		// 返回整个对象
-		return d.Inputs[0]
-	}
 	var value interface{}
-	if v, ok := d.Inputs[0][key]; ok {
+	if v, ok := d.InputMaps[0][key]; ok {
 		// 如果存在
 		value = v
 	} else {
 		str := stringy.New(key).CamelCase().ToLower()
 		// 如果不存在，尝试查找
-		for k, v := range d.Inputs[0] {
+		for k, v := range d.InputMaps[0] {
 			if str == stringy.New(k).CamelCase().ToLower() {
 				value = v
 				break

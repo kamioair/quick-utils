@@ -54,7 +54,7 @@ func (dao *BaseDao[T]) DB() *gorm.DB {
 func (dao *BaseDao[T]) Create(model *T) error {
 	ref := qreflect.New(model)
 	if ref.Get("LastTime") == "0001-01-01 00:00:00" {
-		_ = ref.Set("LastTime", NewTime(time.Now()))
+		_ = ref.Set("LastTime", NewDateTime(time.Now()))
 	}
 	// 提交
 	result := dao.DB().Create(model)
@@ -72,7 +72,7 @@ func (dao *BaseDao[T]) CreateList(list []T) error {
 		for _, model := range list {
 			ref := qreflect.New(model)
 			if ref.Get("LastTime") == "0001-01-01 00:00:00" {
-				_ = ref.Set("LastTime", NewTime(time.Now()))
+				_ = ref.Set("LastTime", NewDateTime(time.Now()))
 			}
 			if err := tx.Create(&model).Error; err != nil {
 				return err
@@ -92,7 +92,7 @@ func (dao *BaseDao[T]) CreateList(list []T) error {
 func (dao *BaseDao[T]) Update(model *T) error {
 	ref := qreflect.New(model)
 	if ref.Get("LastTime") == "0001-01-01 00:00:00" {
-		_ = ref.Set("LastTime", NewTime(time.Now()))
+		_ = ref.Set("LastTime", NewDateTime(time.Now()))
 	}
 	// 提交
 	result := dao.DB().Model(model).Updates(model)
@@ -114,7 +114,7 @@ func (dao *BaseDao[T]) Update(model *T) error {
 func (dao *BaseDao[T]) Save(model *T) error {
 	ref := qreflect.New(model)
 	if ref.Get("LastTime") == "0001-01-01 00:00:00" {
-		_ = ref.Set("LastTime", NewTime(time.Now()))
+		_ = ref.Set("LastTime", NewDateTime(time.Now()))
 	}
 	// 提交
 	result := dao.DB().Save(model)
