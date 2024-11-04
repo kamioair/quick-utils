@@ -15,12 +15,12 @@ func ToAny[T any](raw any) T {
 	if err != nil {
 		panic(err)
 	}
-	dbModel := *new(T)
-	err = json.Unmarshal(js, dbModel)
+	dbModel := new(T)
+	err = json.Unmarshal(js, &dbModel)
 	if err != nil {
 		panic(err)
 	}
-	return dbModel
+	return *dbModel
 }
 
 // ToAnyError
@@ -36,10 +36,10 @@ func ToAnyError[T any](raw any) (T, error) {
 	if err != nil {
 		return *new(T), err
 	}
-	dbModel := *new(T)
-	err = json.Unmarshal(js, dbModel)
+	dbModel := new(T)
+	err = json.Unmarshal(js, &dbModel)
 	if err != nil {
 		return *new(T), err
 	}
-	return dbModel, nil
+	return *dbModel, nil
 }
