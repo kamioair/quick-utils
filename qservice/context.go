@@ -12,8 +12,9 @@ import (
 )
 
 type context struct {
-	pack   easyCon.PackReq
-	values *values
+	reqPack  easyCon.PackReq
+	respPack easyCon.PackResp
+	values   *values
 }
 
 type values struct {
@@ -22,32 +23,54 @@ type values struct {
 	OutputValue interface{}
 }
 
-func newControl(pack easyCon.PackReq) (*context, error) {
+func newControlReq(pack easyCon.PackReq) (*context, error) {
 	ctx := &context{
-		pack: pack,
+		reqPack: pack,
 		values: &values{
 			InputMaps: make([]map[string]interface{}, 0),
 		},
 	}
-	if pack.Content != nil {
+	err := setData(ctx, pack.Content)
+	if err != nil {
+		return nil, err
+	}
+	return ctx, nil
+}
+
+func newControlResp(pack easyCon.PackResp) (*context, error) {
+	ctx := &context{
+		respPack: pack,
+		values: &values{
+			InputMaps: make([]map[string]interface{}, 0),
+		},
+	}
+	err := setData(ctx, pack.Content)
+	if err != nil {
+		return nil, err
+	}
+	return ctx, nil
+}
+
+func setData(ctx *context, data any) error {
+	if data != nil {
 		var content []byte
-		switch pack.Content.(type) {
+		switch data.(type) {
 		case string:
-			str := pack.Content.(string)
+			str := data.(string)
 			content = []byte(str)
 		default:
-			js, err := json.Marshal(pack.Content)
+			js, err := json.Marshal(data)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			content = js
 		}
 		err := ctx.values.load(content)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return ctx, nil
+	return nil
 }
 
 func (c *context) GetString(key string) string {
@@ -137,7 +160,18 @@ func (c *context) GetFiles(key string) []qdefine.File {
 }
 
 func (c *context) GetStruct(refStruct any) {
-	val := c.values.getValue("")
+	var val any
+
+	t := reflect.ValueOf(refStruct)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.Slice {
+		val = c.values.InputMaps
+	} else {
+		val = c.values.getValue("")
+	}
+
 	// 先转为json
 	js, err := json.Marshal(val)
 	if err != nil {

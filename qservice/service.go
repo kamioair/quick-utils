@@ -62,8 +62,8 @@ func (serv *MicroService) Run() {
 }
 
 func (serv *MicroService) SendRequest(module, route string, params any) (qdefine.Context, error) {
-	_ = serv.adapter.Req(module, route, params)
-	return nil, nil
+	resp := serv.adapter.Req(module, route, params)
+	return newControlResp(resp)
 }
 
 func (serv *MicroService) SendNotice(route string, content any) {
@@ -103,7 +103,7 @@ func (serv *MicroService) onReq(pack easyCon.PackReq) (code easyCon.EResp, resp 
 		return easyCon.ERespSuccess, nil
 	}
 	if serv.setting.OnReqHandler != nil {
-		ctx, err1 := newControl(pack)
+		ctx, err1 := newControlReq(pack)
 		if err1 != nil {
 			return easyCon.ERespError, err1.Error()
 		}
