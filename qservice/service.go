@@ -53,7 +53,7 @@ func New(module string, version string, onReqHandler ReqHandler, configContent [
 	apiSetting := easyCon.NewSetting(setting.Module, setting.Host.Addr, serv.onReq, serv.onStatusChanged)
 	apiSetting.UID = setting.Host.UId
 	apiSetting.PWD = setting.Host.Pwd
-	apiSetting.TimeOut = time.Duration(setting.Host.TimeOut)
+	apiSetting.TimeOut = time.Duration(setting.Host.TimeOut) * time.Second
 	apiSetting.ReTry = setting.Host.Retry
 	apiSetting.LogMode = easyCon.ELogMode(setting.Host.LogMode)
 	serv.adapter = easyCon.NewMqttAdapter(apiSetting)
