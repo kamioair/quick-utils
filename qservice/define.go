@@ -18,6 +18,8 @@ type Host struct {
 	UId     string
 	Pwd     string
 	LogMode string
+	TimeOut int
+	Retry   int
 }
 
 type ReqHandler func(route string, ctx qdefine.Context) (any, error)
