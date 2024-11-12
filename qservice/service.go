@@ -1,12 +1,14 @@
 package qservice
 
 import (
-	"github.com/liaozhibinair/quick-utils/qconfig"
+	"errors"
+	"fmt"
 	"github.com/liaozhibinair/quick-utils/qdefine"
 	"github.com/liaozhibinair/quick-utils/qio"
 	"github.com/liaozhibinair/quick-utils/qlauncher"
 	easyCon "github.com/qiu-tec/easy-con.golang"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,7 +19,7 @@ type MicroService struct {
 	setting Setting
 }
 
-func New(module string, version string, onReqHandler ReqHandler, configContent []byte) *MicroService {
+func NewService(setting Setting) *MicroService {
 	// 修改系统路径为当前目录
 	cd, err := qio.GetCurrentDirectory()
 	if err != nil {
@@ -28,34 +30,20 @@ func New(module string, version string, onReqHandler ReqHandler, configContent [
 		panic(err)
 	}
 
-	// 初始化配置
-	qconfig.Init("./config/config.yaml", configContent)
-
-	setting := Setting{
-		Module: module,
-		Host: Host{
-			Addr:    qconfig.Get(module, "mqtt.addr", "ws://127.0.0.1:5002/ws"),
-			UId:     qconfig.Get(module, "mqtt.username", ""),
-			Pwd:     qconfig.Get(module, "mqtt.password", ""),
-			LogMode: qconfig.Get(module, "mqtt.logMode", "NONE"),
-			TimeOut: qconfig.Get(module, "mqtt.timeOut", 3000),
-			Retry:   qconfig.Get(module, "mqtt.retry", 3),
-		},
-		Version:      version,
-		OnReqHandler: onReqHandler,
-	}
+	// 创建服务
 	serv := &MicroService{
-		Module:  module,
+		Module:  setting.Module,
 		setting: setting,
 	}
 
 	// 初始化Api适配器
-	apiSetting := easyCon.NewSetting(setting.Module, setting.Host.Addr, serv.onReq, serv.onStatusChanged)
-	apiSetting.UID = setting.Host.UId
-	apiSetting.PWD = setting.Host.Pwd
-	apiSetting.TimeOut = time.Duration(setting.Host.TimeOut) * time.Second
-	apiSetting.ReTry = setting.Host.Retry
-	apiSetting.LogMode = easyCon.ELogMode(setting.Host.LogMode)
+	apiSetting := easyCon.NewSetting(setting.Module, setting.Broker.Addr, serv.onReq, serv.onStatusChanged)
+	apiSetting.OnNotice = serv.OnNotice
+	apiSetting.UID = setting.Broker.UId
+	apiSetting.PWD = setting.Broker.Pwd
+	apiSetting.TimeOut = time.Duration(setting.Broker.TimeOut) * time.Second
+	apiSetting.ReTry = setting.Broker.Retry
+	apiSetting.LogMode = easyCon.ELogMode(setting.Broker.LogMode)
 	serv.adapter = easyCon.NewMqttAdapter(apiSetting)
 
 	return serv
@@ -66,8 +54,34 @@ func (serv *MicroService) Run() {
 }
 
 func (serv *MicroService) SendRequest(module, route string, params any) (qdefine.Context, error) {
-	resp := serv.adapter.Req(module, route, params)
-	return newControlResp(resp)
+	var resp easyCon.PackResp
+
+	if strings.Contains(module, "/") {
+		// 路由请求
+		newParams := map[string]any{}
+		newParams["Module"] = module
+		newParams["Route"] = route
+		newParams["Content"] = params
+		resp = serv.adapter.Req("Route", "Request", newParams)
+	} else {
+		// 常规请求
+		resp = serv.adapter.Req(module, route, params)
+	}
+	if resp.RespCode == easyCon.ERespSuccess {
+		// 返回成功
+		return newControlResp(resp)
+	}
+	// 返回异常
+	if resp.RespCode == easyCon.ERespTimeout {
+		return nil, errors.New(fmt.Sprintf("%v:%s", resp.RespCode, "request timeout"))
+	}
+	if resp.RespCode == easyCon.ERespRouteNotFind {
+		return nil, errors.New(fmt.Sprintf("%v:%s", resp.RespCode, "request route not find"))
+	}
+	if resp.RespCode == easyCon.ERespForbidden {
+		return nil, errors.New(fmt.Sprintf("%v:%s", resp.RespCode, "request forbidden"))
+	}
+	return nil, errors.New(fmt.Sprintf("%v:%s,%s", resp.RespCode, resp.Content, resp.Error))
 }
 
 func (serv *MicroService) SendNotice(route string, content any) {
@@ -92,6 +106,8 @@ func (serv *MicroService) onReq(pack easyCon.PackReq) (code easyCon.EResp, resp 
 	defer errRecover(func(err string) {
 		code = easyCon.ERespError
 		resp = err
+		// 记录日志
+
 	})
 
 	switch pack.Route {
@@ -113,12 +129,39 @@ func (serv *MicroService) onReq(pack easyCon.PackReq) (code easyCon.EResp, resp 
 		}
 		rs, err2 := serv.setting.OnReqHandler(pack.Route, ctx)
 		if err2 != nil {
-			return easyCon.ERespError, err2.Error()
+			c, _ := strconv.Atoi(err2.Error())
+			switch c {
+			case int(easyCon.ERespBadReq):
+				return easyCon.ERespBadReq, "request bad"
+			case int(easyCon.ERespRouteNotFind):
+				return easyCon.ERespRouteNotFind, "request route not find"
+			case int(easyCon.ERespForbidden):
+				return easyCon.ERespForbidden, "request forbidden"
+			case int(easyCon.ERespTimeout):
+				return easyCon.ERespTimeout, "request timeout"
+			default:
+				return easyCon.ERespError, err2.Error()
+			}
 		}
 		// 执行成功，返回结果
 		return easyCon.ERespSuccess, rs
 	}
 	return easyCon.ERespRouteNotFind, "Route Not Matched"
+}
+
+func (serv *MicroService) OnNotice(notice easyCon.PackNotice) {
+	defer errRecover(func(err string) {
+		// 记录日志
+	})
+
+	// 外置方法
+	if serv.setting.OnNoticeHandler != nil {
+		ctx, err := newControlNotice(notice)
+		if err != nil {
+			panic(err)
+		}
+		serv.setting.OnNoticeHandler(notice.Route, ctx)
+	}
 }
 
 func (serv *MicroService) onStatusChanged(adapter easyCon.IAdapter, status easyCon.EStatus) {

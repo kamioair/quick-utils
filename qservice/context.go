@@ -12,9 +12,10 @@ import (
 )
 
 type context struct {
-	reqPack  easyCon.PackReq
-	respPack easyCon.PackResp
-	values   *values
+	reqPack    easyCon.PackReq
+	respPack   easyCon.PackResp
+	noticePack easyCon.PackNotice
+	values     *values
 }
 
 type values struct {
@@ -51,13 +52,27 @@ func newControlResp(pack easyCon.PackResp) (*context, error) {
 	return ctx, nil
 }
 
+func newControlNotice(pack easyCon.PackNotice) (*context, error) {
+	ctx := &context{
+		noticePack: pack,
+		values: &values{
+			InputMaps: make([]map[string]interface{}, 0),
+		},
+	}
+	err := setData(ctx, pack.Content)
+	if err != nil {
+		return nil, err
+	}
+	return ctx, nil
+}
+
 func setData(ctx *context, data any) error {
 	if data != nil {
 		var content []byte
 		switch data.(type) {
 		case string:
 			str := data.(string)
-			content = []byte(str)
+			content = []byte(fmt.Sprintf("\"%s\"", str))
 		default:
 			js, err := json.Marshal(data)
 			if err != nil {
