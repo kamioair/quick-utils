@@ -70,7 +70,7 @@ func setup(start func(), startEx func(param interface{}), param interface{}, sto
 		stop:       stop,
 	}
 	// 获取当前程序所在路径
-	cd, err := qio.GetCurrentDirectory()
+	cd, err := qio.GetCurrentFilePath()
 	cd = strings.Replace(cd, "\\", "/", -1)
 	n1 := strings.Split(path.Dir(cd), "/")
 	n2 := strings.TrimSuffix(path.Base(cd), path.Ext(cd))

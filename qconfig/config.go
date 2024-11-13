@@ -1,6 +1,7 @@
 package qconfig
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"github.com/kamioair/quick-utils/qio"
@@ -14,18 +15,23 @@ var (
 	_isLoad   = false
 )
 
+// 默认配置文件內容
+//
+//go:embed config.yaml
+var configContent []byte
+
 // Load
 //
 //	@Description: 加载内容到结构体
 //	@param module 模块名称
 //	@param configStruct 结构体指针
-func Load(module string, configStruct any, configDefContent []byte) {
+func Load(module string, configStruct any) {
 	// 加载文件，没有则创建文件
 	if _isLoad == false {
 		// 没有默认值则不生成文件
-		if configDefContent != nil && len(configDefContent) > 0 {
+		if configContent != nil && len(configContent) > 0 {
 			if qio.PathExists(_filePath) == false {
-				err := qio.WriteAllBytes(_filePath, configDefContent, false)
+				err := qio.WriteAllBytes(_filePath, configContent, false)
 				if err != nil {
 					panic(fmt.Errorf("Fatal error config file: %s \n", err))
 				}

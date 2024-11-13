@@ -26,3 +26,22 @@ type Date uint32
 
 // DateTime 日期+时间
 type DateTime uint64
+
+// ELog 日志
+type ELog string
+
+const (
+	ELogDebug ELog = "Debug"
+	ELogWarn  ELog = "Warn"
+	ELogError ELog = "Error"
+)
+
+type ECommState string
+
+const (
+	ECommStateConnecting ECommState = "Connecting" //连接中
+	ECommStateLinked     ECommState = "Linked"     //已连接
+	ECommStateLinkLost   ECommState = "LinkLost"   //连接丢失
+	ECommStateFault      ECommState = "Fault"      //故障
+	ECommStateStopped    ECommState = "Stopped"    //已停止
+)

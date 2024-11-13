@@ -25,12 +25,12 @@ func PathExists(path string) bool {
 	return exist
 }
 
-// GetCurrentDirectory
+// GetCurrentFilePath
 //
-//	@Description: 获取程序的当前工作目录
+//	@Description: 获取当前文件路径
 //	@return string
 //	@return error
-func GetCurrentDirectory() (string, error) {
+func GetCurrentFilePath() (string, error) {
 	if runtime.GOOS == "windows" {
 		file, err := exec.LookPath(os.Args[0])
 		if err != nil {
@@ -39,6 +39,37 @@ func GetCurrentDirectory() (string, error) {
 		return filepath.Abs(file)
 	}
 	return filepath.Abs(os.Args[0])
+}
+
+// GetCurrentDirectory
+//
+//	@Description: 获取程序的当前工作目录
+//	@return string
+func GetCurrentDirectory() string {
+	path, err := GetCurrentFilePath()
+	if err != nil {
+		return ""
+	}
+	return GetDirectory(path)
+}
+
+// GetCurrentRoot
+//
+//	@Description: 获取程序的当前的根目录
+//	@return string
+func GetCurrentRoot() string {
+	dir := GetCurrentDirectory()
+	if dir == "" {
+		return ""
+	}
+	dir = strings.Replace(dir, "\\", "/", -1)
+	sp := strings.Split(dir, "/")
+	if len(sp) > 0 {
+		if runtime.GOOS == "windows" {
+			return sp[0]
+		}
+	}
+	return "/"
 }
 
 // GetDirectory
