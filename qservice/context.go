@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gobeam/stringy"
-	"github.com/liaozhibinair/quick-utils/qdefine"
+	"github.com/kamioair/quick-utils/qdefine"
 	easyCon "github.com/qiu-tec/easy-con.golang"
 	"reflect"
 	"strconv"

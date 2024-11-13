@@ -2,7 +2,7 @@ package qdefine
 
 import (
 	"errors"
-	"github.com/liaozhibinair/quick-utils/qreflect"
+	"github.com/kamioair/quick-utils/qreflect"
 	"gorm.io/gorm"
 	"time"
 )

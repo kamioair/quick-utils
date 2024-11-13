@@ -3,8 +3,8 @@ package qservice
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/liaozhibinair/quick-utils/qconvert"
-	"github.com/liaozhibinair/quick-utils/qio"
+	"github.com/kamioair/quick-utils/qconvert"
+	"github.com/kamioair/quick-utils/qio"
 	"path/filepath"
 	"regexp"
 	"runtime"

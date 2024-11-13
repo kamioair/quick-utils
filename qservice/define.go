@@ -1,9 +1,9 @@
 package qservice
 
 import (
-	"github.com/liaozhibinair/quick-utils/qconfig"
-	"github.com/liaozhibinair/quick-utils/qdefine"
-	"github.com/liaozhibinair/quick-utils/qio"
+	"github.com/kamioair/quick-utils/qconfig"
+	"github.com/kamioair/quick-utils/qdefine"
+	"github.com/kamioair/quick-utils/qio"
 	"os"
 )
 
@@ -53,7 +53,7 @@ func NewSetting(defModule string, version string, onReqHandler ReqHandler, onNot
 			Addr:    qconfig.Get(module, "mqtt.addr", "ws://127.0.0.1:5002/ws"),
 			UId:     qconfig.Get(module, "mqtt.username", ""),
 			Pwd:     qconfig.Get(module, "mqtt.password", ""),
-			LogMode: qconfig.Get(module, "mqtt.logMode", "NONE"),
+			LogMode: qconfig.Get(module, "mqtt.logMode", "CONSOLE"),
 			TimeOut: qconfig.Get(module, "mqtt.timeOut", 3000),
 			Retry:   qconfig.Get(module, "mqtt.retry", 3),
 		},

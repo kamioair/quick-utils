@@ -2,8 +2,8 @@ package qlauncher
 
 import (
 	"fmt"
+	"github.com/kamioair/quick-utils/qio"
 	"github.com/kardianos/service"
-	"github.com/liaozhibinair/quick-utils/qio"
 	"log"
 	"os"
 	"path"

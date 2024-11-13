@@ -2,8 +2,8 @@ package qdefine
 
 import (
 	"fmt"
-	"github.com/liaozhibinair/quick-utils/qconfig"
-	"github.com/liaozhibinair/quick-utils/qconvert"
+	"github.com/kamioair/quick-utils/qconfig"
+	"github.com/kamioair/quick-utils/qconvert"
 	"strconv"
 	"strings"
 	"time"

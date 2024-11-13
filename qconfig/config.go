@@ -3,7 +3,7 @@ package qconfig
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liaozhibinair/quick-utils/qio"
+	"github.com/kamioair/quick-utils/qio"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 	"strings"

@@ -3,9 +3,9 @@ package qservice
 import (
 	"errors"
 	"fmt"
-	"github.com/liaozhibinair/quick-utils/qdefine"
-	"github.com/liaozhibinair/quick-utils/qio"
-	"github.com/liaozhibinair/quick-utils/qlauncher"
+	"github.com/kamioair/quick-utils/qdefine"
+	"github.com/kamioair/quick-utils/qio"
+	"github.com/kamioair/quick-utils/qlauncher"
 	easyCon "github.com/qiu-tec/easy-con.golang"
 	"os"
 	"strconv"

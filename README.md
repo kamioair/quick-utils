@@ -5,6 +5,6 @@
 ### get it
 
 ```go
-go get github.com/liaozhibinair/quick-utils
+go get github.com/kamioair/quick-utils
 ```
 

@@ -3,7 +3,7 @@ package qdb
 import (
 	"errors"
 	"fmt"
-	"github.com/liaozhibinair/quick-utils/qio"
+	"github.com/kamioair/quick-utils/qio"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/driver/sqlserver"

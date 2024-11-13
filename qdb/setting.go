@@ -1,6 +1,6 @@
 package qdb
 
-import "github.com/liaozhibinair/quick-utils/qconfig"
+import "github.com/kamioair/quick-utils/qconfig"
 
 type setting struct {
 	Connect string

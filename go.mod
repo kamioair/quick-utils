@@ -1,4 +1,4 @@
-module github.com/liaozhibinair/quick-utils
+module github.com/kamioair/quick-utils
 
 go 1.20
 
