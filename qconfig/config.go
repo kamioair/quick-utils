@@ -12,7 +12,6 @@ import (
 
 var (
 	_filePath = "./config/config.yaml"
-	_isLoad   = false
 )
 
 // 默认配置文件內容
@@ -20,32 +19,35 @@ var (
 //go:embed config.yaml
 var configContent []byte
 
+// ChangeFilePath
+//
+//	@Description: 修改文件路径
+//	@param module 新文件路径
+func ChangeFilePath(path string) {
+	_filePath = path
+	// 没有默认值则不生成文件
+	if configContent != nil && len(configContent) > 0 {
+		if qio.PathExists(_filePath) == false {
+			err := qio.WriteAllBytes(_filePath, configContent, false)
+			if err != nil {
+				panic(fmt.Errorf("Fatal error config file: %s \n", err))
+			}
+		}
+	}
+	viper.SetConfigFile(_filePath)
+	viper.SetConfigType("yaml")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+	}
+}
+
 // Load
 //
 //	@Description: 加载内容到结构体
 //	@param module 模块名称
 //	@param configStruct 结构体指针
 func Load(module string, configStruct any) {
-	// 加载文件，没有则创建文件
-	if _isLoad == false {
-		// 没有默认值则不生成文件
-		if configContent != nil && len(configContent) > 0 {
-			if qio.PathExists(_filePath) == false {
-				err := qio.WriteAllBytes(_filePath, configContent, false)
-				if err != nil {
-					panic(fmt.Errorf("Fatal error config file: %s \n", err))
-				}
-			}
-		}
-		viper.SetConfigFile(_filePath)
-		viper.SetConfigType("yaml")
-		err := viper.ReadInConfig()
-		if err != nil {
-			panic(fmt.Errorf("Fatal error config file: %s \n", err))
-		}
-		_isLoad = true
-	}
-
 	// 读取文件
 	value := viper.Get(module)
 	if value == nil {

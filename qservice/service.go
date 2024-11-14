@@ -46,20 +46,27 @@ func (serv *MicroService) Run() {
 
 // ResetClient 重置客户端
 func (serv *MicroService) ResetClient(code string) {
-	serv.setting.deviceCode = code
 	module := serv.setting.Module
 	sp := strings.Split(module, ".")
 	if len(sp) >= 2 {
-		module = sp[0] + "." + code
+		module = serv.newModuleName(sp[0], code)
 	} else {
-		module = module + "." + code
+		module = serv.newModuleName(module, code)
 	}
-	module = strings.Trim(module, ".")
+	serv.setting.deviceCode = code
 	serv.setting.Module = module
 	serv.Module = module
 
 	// 重新创建服务
 	serv.initAdapter()
+}
+
+func (serv *MicroService) newModuleName(module, code string) string {
+	if strings.Contains(module, ".") {
+		return module
+	}
+	str := module + "." + code
+	return strings.Trim(str, ".")
 }
 
 // SendRequest 发送请求
@@ -69,13 +76,13 @@ func (serv *MicroService) SendRequest(module, route string, params any) (qdefine
 	if strings.Contains(module, "/") {
 		// 路由请求
 		newParams := map[string]any{}
-		newParams["Module"] = module
+		newParams["Module"] = serv.newModuleName(module, serv.setting.deviceCode)
 		newParams["Route"] = route
 		newParams["Content"] = params
 		resp = serv.adapter.Req("Route", "Request", newParams)
 	} else {
 		// 常规请求
-		resp = serv.adapter.Req(module, route, params)
+		resp = serv.adapter.Req(serv.newModuleName(module, serv.setting.deviceCode), route, params)
 	}
 	if resp.RespCode == easyCon.ERespSuccess {
 		// 返回成功
@@ -131,6 +138,20 @@ func (serv *MicroService) initAdapter() {
 	apiSetting.ReTry = serv.setting.Broker.Retry
 	apiSetting.LogMode = easyCon.ELogMode(serv.setting.Broker.LogMode)
 	serv.adapter = easyCon.NewMqttAdapter(apiSetting)
+
+	// 如果是路由模式，则问客户端管理模块请求上级客户端ID
+	if serv.setting.deviceCode != "" {
+		info := map[string]string{}
+		info["DeviceCode"] = serv.setting.deviceCode
+		info["ModuleName"] = strings.Replace(serv.setting.Module, fmt.Sprintf(".%s", serv.setting.deviceCode), "", 1)
+		info["ModuleDesc"] = serv.setting.Desc
+		info["Version"] = serv.setting.Version
+		ctx, err := serv.SendRequest("ClientManager", "GetParentClientId", info)
+		if err != nil {
+			panic(err)
+		}
+		serv.setting.parentDevCode = ctx.Raw().(string)
+	}
 }
 
 func (serv *MicroService) onReq(pack easyCon.PackReq) (code easyCon.EResp, resp any) {
